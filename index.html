@@ -4,129 +4,97 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MambillaTok - Mambilla TikTok</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff0050">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body{background:#000;color:#fff;font-family:sans-serif;margin:0;padding:0}
-#feed{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory}
-.video{height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:#111}
-video{max-height:100vh;max-width:100%}
-.caption{position:absolute;bottom:80px;left:10px;right:10px;background:rgba(0,0,0,0.5);padding:8px;border-radius:8px}
-#uploadBtn{position:fixed;bottom:20px;right:20px;background:#ff0050;color:#fff;border:none;padding:15px 25px;border-radius:30px;font-weight:bold;z-index:10;cursor:pointer;font-size:16px}
+body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:0;overflow:hidden}
+#feed{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch}
+.video{height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
+video{height:100%;width:100%;object-fit:contain;background:#111}
+.overlay-left{position:absolute;bottom:100px;left:12px;right:80px;z-index:2}
+.overlay-left b{font-size:16px;display:block;margin-bottom:4px}
+.overlay-left p{margin:0;font-size:14px;opacity:0.9}
+.right-actions{position:absolute;right:10px;bottom:120px;display:flex;flex-direction:column;gap:22px;z-index:3;align-items:center}
+.action-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;width:50px;height:50px;border-radius:50%;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.action-btn.liked{background:#ff0050}
+.action-count{font-size:12px;margin-top:4px;font-weight:bold;text-align:center}
+#topBar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;justify-content:space-between;padding:14px 16px;background:linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)}
+#topBar h1{margin:0;font-size:22px}
+#topBar button{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:8px 14px;border-radius:20px;cursor:pointer}
+#uploadBtn{position:fixed;bottom:24px;right:50%;transform:translateX(50%);background:#ff0050;color:#fff;border:none;padding:14px 32px;border-radius:30px;font-weight:bold;z-index:10;cursor:pointer;font-size:16px;box-shadow:0 4px 20px rgba(255,0,80,0.5)}
 #fileInput{display:none}
-#status{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;padding:10px 20px;border-radius:20px;z-index:20;display:none}
-#captionBox{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;padding:20px;border-radius:15px;z-index:30;display:none;width:80%;max-width:300px}
-#captionBox input{width:100%;padding:10px;margin:10px 0;border-radius:8px;border:none}
-#captionBox button{padding:10px 15px;margin:5px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+#status{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#222;padding:10px 20px;border-radius:20px;z-index:20;display:none}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:40;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.active{display:flex}
+.modal-box{background:#1a1a1a;padding:24px;border-radius:16px;width:100%;max-width:340px}
+.modal-box input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:#2a2a2a;color:#fff;box-sizing:border-box}
+.modal-box button{width:100%;padding:12px;margin-top:8px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+.btn-primary{background:#ff0050;color:#fff}
+.btn-secondary{background:#333;color:#fff}
+#commentDrawer{position:fixed;bottom:0;left:0;right:0;background:#111;border-radius:20px 20px 0 0;z-index:35;max-height:70vh;display:none;flex-direction:column}
+#commentDrawer.active{display:flex}
+#commentList{flex:1;overflow-y:auto;padding:16px}
+.comment{padding:10px 0;border-bottom:1px solid #222;display:flex;gap:8px}
+.comment b{color:#ff0050}
 </style>
 </head>
 <body>
+<div id="topBar"><h1>MambillaTok</h1><div><button id="loginBtn">Login</button> <button id="installBtn" style="display:none">📲 Install App</button></div></div>
 <div id="status">Uploading...</div>
-<div id="feed"><h2 style="text-align:center;padding-top:40vh">Loading MambillaTok... 🔥</h2></div>
+<div id="feed"><h2 style="text-align:center;padding-top:45vh">Loading MambillaTok... 🔥</h2></div>
 <input type="file" id="fileInput" accept="video/*">
-<button id="uploadBtn">+ Upload</button>
-
-<div id="captionBox">
+<button id="uploadBtn">+ Upload Video</button>
+<div id="authModal" class="modal"><div class="modal-box">
+<h2 id="authTitle">Join MambillaTok</h2>
+<input type="email" id="authEmail" placeholder="Email">
+<input type="password" id="authPass" placeholder="Password (6+ chars)">
+<button class="btn-primary" id="authAction">Sign Up</button>
+<button class="btn-secondary" id="authSwitch">Already have account? Login</button>
+<button class="btn-secondary" id="authClose" style="margin-top:12px;background:transparent">Close</button>
+<p id="authMsg" style="font-size:12px;opacity:0.7;margin-top:8px"></p>
+</div></div>
+<div id="captionBox" class="modal"><div class="modal-box">
 <h3>Add Caption</h3>
-<input type="text" id="captionInput" placeholder="Type caption...">
-<button id="captionOk" style="background:#ff0050;color:#fff">Post Video</button>
-<button id="captionCancel" style="background:#555;color:#fff">Cancel</button>
+<input type="text" id="captionInput" placeholder="Type caption... e.g. Mambilla culture">
+<button class="btn-primary" id="captionOk">Post Video</button>
+<button class="btn-secondary" id="captionCancel">Cancel</button>
+</div></div>
+<div id="commentDrawer">
+<div style="padding:16px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">Comments</h3><button id="closeComments" style="background:none;border:none;color:#fff;font-size:20px">✕</button></div>
+<div id="commentList"></div>
+<div style="padding:12px;display:flex;gap:8px;border-top:1px solid #222"><input id="commentInput" placeholder="Add comment..." style="flex:1;padding:12px;border-radius:25px;border:none;background:#222;color:#fff"><button id="sendComment" style="background:#ff0050;color:#fff;border:none;padding:12px 20px;border-radius:25px;font-weight:bold">Post</button></div>
 </div>
-
 <script>
 const SUPA_URL = 'https://vtytewadmmufjplzopjf.supabase.co';
 const SUPA_KEY = 'sb_publishable_RtgoaL248SZgC6bq6FXz3A_gGHQN0Yt';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
-
-let pendingPublicUrl = null;
-
-function showStatus(msg){
-  const s=document.getElementById('status');
-  s.textContent=msg;
-  s.style.display='block';
-}
-function hideStatus(){
-  document.getElementById('status').style.display='none';
-}
-
-async function load(){
- try{
-  const {data,error} = await supa.from('videos').select('*').order('created_at',{ascending:false}).limit(20);
-  if(error){
-    document.getElementById('feed').innerHTML='<p style="text-align:center;padding-top:40vh">DB Error: '+error.message+'</p>';
-    return;
-  }
-  if(!data || data.length==0){
-    document.getElementById('feed').innerHTML='<h2 style="text-align:center;padding-top:40vh">No videos yet<br>Be first to upload! 🎥</h2>';
-    return;
-  }
-  const feed=document.getElementById('feed');
-  feed.innerHTML='';
-  data.forEach(v=>{
-   const div=document.createElement('div');
-   div.className='video';
-   div.innerHTML=`<video src="${v.video_url}" controls loop playsinline></video><div class="caption"><b>${v.caption||''}</b></div>`;
-   feed.appendChild(div);
-  });
- }catch(e){
-  document.getElementById('feed').innerHTML='Error: '+e.message
- }
-}
-load();
-
-document.getElementById('uploadBtn').onclick=()=>document.getElementById('fileInput').click();
-
-document.getElementById('fileInput').onchange=async (e)=>{
- const file=e.target.files[0];
- if(!file) return;
- showStatus('Uploading... wait 30 sec, no close window');
- const name=Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9.]/g,'_');
- try{
-  const {error} = await supa.storage.from('mambilla-videos').upload(name,file);
-  if(error){
-    hideStatus();
-    alert('Storage Error: '+error.message+' | Check bucket name is mambilla-videos');
-    console.error(error);
-    return;
-  }
-  const {data}=supa.storage.from('mambilla-videos').getPublicUrl(name);
-  pendingPublicUrl=data.publicUrl;
-  hideStatus();
-  document.getElementById('captionBox').style.display='block';
-  document.getElementById('captionInput').focus();
- }catch(err){
-  hideStatus();
-  alert('Upload failed: '+err.message);
-  console.error(err)
- }
-};
-
-document.getElementById('captionOk').onclick=async ()=>{
- const caption=document.getElementById('captionInput').value || 'MambillaTok video';
- document.getElementById('captionBox').style.display='none';
- showStatus('Saving...');
- try{
-  const {error:dbErr}=await supa.from('videos').insert({video_url:pendingPublicUrl,caption});
-  if(dbErr){
-    hideStatus();
-    alert('DB Error: '+dbErr.message);
-    return;
-  }
-  document.getElementById('captionInput').value='';
-  hideStatus();
-  showStatus('Uploaded! 🎉');
-  setTimeout(hideStatus,2000);
-  load();
- }catch(err){
-  hideStatus();
-  alert('DB save failed: '+err.message)
- }
-};
-
-document.getElementById('captionCancel').onclick=()=>{
- document.getElementById('captionBox').style.display='none';
- document.getElementById('captionInput').value='';
- hideStatus();
-};
+const BUCKET = 'mambilla-videos';
+let currentUser=null; let pendingPublicUrl=null; let activeVideoId=null; let authMode='signup'; let videosCache=[];
+function showStatus(m){const s=document.getElementById('status');s.textContent=m;s.style.display='block'}
+function hideStatus(){document.getElementById('status').style.display='none'}
+async function checkUser(){const {data:{user}}=await supa.auth.getUser(); currentUser=user; const b=document.getElementById('loginBtn'); if(user){b.textContent=user.email.split('@')[0]; b.onclick=async()=>{await supa.auth.signOut(); location.reload()}} else{b.textContent='Login'; b.onclick=()=>openAuth()}}
+function openAuth(){document.getElementById('authModal').classList.add('active')}
+function closeAuth(){document.getElementById('authModal').classList.remove('active')}
+document.getElementById('authSwitch').onclick=()=>{authMode=authMode==='signup'?'login':'signup'; document.getElementById('authTitle').textContent=authMode==='signup'?'Join MambillaTok':'Welcome Back'; document.getElementById('authAction').textContent=authMode==='signup'?'Sign Up':'Login'; document.getElementById('authSwitch').textContent=authMode==='signup'?'Already have account? Login':'New? Sign Up';}
+document.getElementById('authAction').onclick=async()=>{const email=document.getElementById('authEmail').value.trim(); const pass=document.getElementById('authPass').value.trim(); if(!email||!pass){alert('Fill email & password');return} document.getElementById('authMsg').textContent='Loading...'; try{if(authMode==='signup'){const {error}=await supa.auth.signUp({email,password:pass}); if(error) throw error; document.getElementById('authMsg').textContent='Account created! Now login.'; authMode='login'; document.getElementById('authSwitch').click();}else{const {error}=await supa.auth.signInWithPassword({email,password:pass}); if(error) throw error; closeAuth(); checkUser(); load();}}catch(e){document.getElementById('authMsg').textContent=e.message}}
+document.getElementById('authClose').onclick=closeAuth;
+async function load(){try{const {data,error}=await supa.from('videos').select('*, profiles(username)').order('created_at',{ascending:false}).limit(30); if(error){document.getElementById('feed').innerHTML='<p style="text-align:center;padding-top:40vh">DB Error: '+error.message+'</p>';return} videosCache=data||[]; if(videosCache.length===0){document.getElementById('feed').innerHTML='<h2 style="text-align:center;padding-top:45vh">No videos yet<br>Be first to upload! 🎥</h2>';return} renderFeed();}catch(e){document.getElementById('feed').innerHTML='Error: '+e.message}}
+function renderFeed(){const feed=document.getElementById('feed'); feed.innerHTML=''; videosCache.forEach(v=>{const div=document.createElement('div'); div.className='video'; div.dataset.id=v.id; div.innerHTML=`<video src="${v.video_url}" loop playsinline preload="metadata"></video><div class="overlay-left"><b>@${(v.profiles&&v.profiles.username)||'mambilla'} • ${v.views||0} views</b><p>${v.caption||''}</p></div><div class="right-actions"><div style="display:flex;flex-direction:column;align-items:center"><button class="action-btn like-btn" data-id="${v.id}">❤️</button><span class="action-count like-count" id="like-${v.id}">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><button class="action-btn comment-btn" data-id="${v.id}">💬</button><span class="action-count" id="comment-count-${v.id}">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><button class="action-btn follow-btn" data-user="${v.user_id}">👤</button><span class="action-count">Follow</span></div><div style="display:flex;flex-direction:column;align-items:center"><button class="action-btn share-btn" data-url="${v.video_url}">↗️</button><span class="action-count">Share</span></div></div>`; feed.appendChild(div); fetchLikeCount(v.id); fetchCommentCount(v.id);}); setupVideoObservers(); setupButtons();}
+function setupVideoObservers(){const observer=new IntersectionObserver((entries)=>{entries.forEach(entry=>{const video=entry.target.querySelector('video'); if(!video) return; if(entry.isIntersecting){video.play().catch(()=>{}); incrementView(entry.target.dataset.id)} else{video.pause()}});},{threshold:0.7}); document.querySelectorAll('.video').forEach(v=>observer.observe(v));}
+async function incrementView(id){const v=videosCache.find(x=>x.id===id); if(!v) return; const nv=(v.views||0)+1; v.views=nv; await supa.from('videos').update({views:nv}).eq('id',id); const el=document.querySelector(`.video[data-id="${id}"] .overlay-left b`); if(el) el.textContent=`@${(v.profiles&&v.profiles.username)||'mambilla'} • ${nv} views`;}
+async function fetchLikeCount(id){const {count}=await supa.from('likes').select('*',{count:'exact',head:true}).eq('video_id',id); const el=document.getElementById(`like-${id}`); if(el) el.textContent=count||0; if(currentUser){const {data}=await supa.from('likes').select('*').eq('video_id',id).eq('user_id',currentUser.id).maybeSingle(); if(data){document.querySelector(`.like-btn[data-id="${id}"]`)?.classList.add('liked')}}}
+async function fetchCommentCount(id){const {count}=await supa.from('comments').select('*',{count:'exact',head:true}).eq('video_id',id); const el=document.getElementById(`comment-count-${id}`); if(el) el.textContent=count||0;}
+function setupButtons(){document.querySelectorAll('.like-btn').forEach(btn=>{btn.onclick=async()=>{if(!currentUser){openAuth();return} const vid=btn.dataset.id; const liked=btn.classList.contains('liked'); if(liked){await supa.from('likes').delete().eq('video_id',vid).eq('user_id',currentUser.id); btn.classList.remove('liked');}else{await supa.from('likes').insert({video_id:vid,user_id:currentUser.id}); btn.classList.add('liked');} fetchLikeCount(vid);}}); document.querySelectorAll('.comment-btn').forEach(btn=>{btn.onclick=()=>{activeVideoId=btn.dataset.id; openComments(activeVideoId)}}); document.querySelectorAll('.follow-btn').forEach(btn=>{btn.onclick=async()=>{if(!currentUser){openAuth();return} const tu=btn.dataset.user; if(tu===currentUser.id){alert('Cannot follow yourself');return} const {data}=await supa.from('follows').select('*').eq('follower_id',currentUser.id).eq('following_id',tu).maybeSingle(); if(data){await supa.from('follows').delete().eq('id',data.id); btn.textContent='👤'; alert('Unfollowed')}else{await supa.from('follows').insert({follower_id:currentUser.id,following_id:tu}); btn.textContent='✅'; alert('Following!')}}}); document.querySelectorAll('.share-btn').forEach(btn=>{btn.onclick=async()=>{const url=btn.dataset.url; if(navigator.share){try{await navigator.share({title:'MambillaTok',url});}catch{}}else{navigator.clipboard.writeText(url); alert('Link copied!')}}});}
+async function openComments(vid){document.getElementById('commentDrawer').classList.add('active'); activeVideoId=vid; const list=document.getElementById('commentList'); list.innerHTML='Loading...'; const {data}=await supa.from('comments').select('*, profiles(username)').eq('video_id',vid).order('created_at',{ascending:false}); if(!data||data.length===0){list.innerHTML='<p style="opacity:0.6;text-align:center">No comments yet. Be first!</p>';return} list.innerHTML=''; data.forEach(c=>{const d=document.createElement('div'); d.className='comment'; d.innerHTML=`<div><b>@${c.profiles?.username||'user'}</b> ${c.content}</div>`; list.appendChild(d);});}
+document.getElementById('closeComments').onclick=()=>document.getElementById('commentDrawer').classList.remove('active');
+document.getElementById('sendComment').onclick=async()=>{const txt=document.getElementById('commentInput').value.trim(); if(!txt) return; if(!currentUser){openAuth();return} if(!activeVideoId) return; await supa.from('comments').insert({video_id:activeVideoId,user_id:currentUser.id,content:txt}); document.getElementById('commentInput').value=''; openComments(activeVideoId); fetchCommentCount(activeVideoId);};
+document.getElementById('uploadBtn').onclick=()=>{if(!currentUser){openAuth();return} document.getElementById('fileInput').click()};
+document.getElementById('fileInput').onchange=async (e)=>{const file=e.target.files[0]; if(!file) return; showStatus('Uploading... wait 30 sec'); const name=Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9.]/g,'_'); try{const {error}=await supa.storage.from(BUCKET).upload(name,file); if(error){hideStatus(); alert('Storage Error: '+error.message);return} const {data}=supa.storage.from(BUCKET).getPublicUrl(name); pendingPublicUrl=data.publicUrl; hideStatus(); document.getElementById('captionBox').classList.add('active');}catch(err){hideStatus(); alert('Upload failed: '+err.message)}};
+document.getElementById('captionOk').onclick=async()=>{const caption=document.getElementById('captionInput').value||'MambillaTok video'; document.getElementById('captionBox').classList.remove('active'); showStatus('Saving...'); try{if(!currentUser){const {data:{user}}=await supa.auth.getUser(); currentUser=user} const insertData={video_url:pendingPublicUrl,caption,views:0}; if(currentUser) insertData.user_id=currentUser.id; const {error}=await supa.from('videos').insert(insertData); if(error){hideStatus(); alert('DB Error: '+error.message);return} document.getElementById('captionInput').value=''; hideStatus(); showStatus('Uploaded!'); setTimeout(hideStatus,2000); load();}catch(err){hideStatus(); alert('DB save failed: '+err.message)}};
+document.getElementById('captionCancel').onclick=()=>{document.getElementById('captionBox').classList.remove('active'); document.getElementById('captionInput').value=''; hideStatus();};
+let deferredPrompt; window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault(); deferredPrompt=e; document.getElementById('installBtn').style.display='inline-block'}); document.getElementById('installBtn').onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt(); const {outcome}=await deferredPrompt.userChoice; if(outcome==='accepted') showStatus('App installed!'); deferredPrompt=null; document.getElementById('installBtn').style.display='none'}};
+checkUser(); load(); if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}
 </script>
 </body>
 </html>
