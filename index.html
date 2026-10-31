@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MambillaTok - Mambilla TikTok</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{background:#000;color:#fff;font-family:sans-serif;margin:0;padding:0}
+#feed{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory}
+.video{height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:#111}
+video{max-height:100vh;max-width:100%}
+.caption{position:absolute;bottom:80px;left:10px;right:10px;background:rgba(0,0,0,0.5);padding:8px;border-radius:8px}
+#uploadBtn{position:fixed;bottom:20px;right:20px;background:#ff0050;color:#fff;border:none;padding:15px 25px;border-radius:30px;font-weight:bold;z-index:10;cursor:pointer;font-size:16px}
+#fileInput{display:none}
+#status{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;padding:10px 20px;border-radius:20px;z-index:20;display:none}
+#captionBox{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#222;padding:20px;border-radius:15px;z-index:30;display:none;width:80%;max-width:300px}
+#captionBox input{width:100%;padding:10px;margin:10px 0;border-radius:8px;border:none}
+#captionBox button{padding:10px 15px;margin:5px;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="status">Uploading...</div>
+<div id="feed"><h2 style="text-align:center;padding-top:40vh">Loading MambillaTok... 🔥</h2></div>
+<input type="file" id="fileInput" accept="video/*">
+<button id="uploadBtn">+ Upload</button>
+
+<div id="captionBox">
+<h3>Add Caption</h3>
+<input type="text" id="captionInput" placeholder="Type caption...">
+<button id="captionOk" style="background:#ff0050;color:#fff">Post Video</button>
+<button id="captionCancel" style="background:#555;color:#fff">Cancel</button>
+</div>
+
+<script>
+const SUPA_URL = 'https://vtytewadmmufjplzopjf.supabase.co';
+const SUPA_KEY = 'sb_publishable_RtgoaL248SZgC6bq6FXz3A_gGHQN0Yt';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let pendingPublicUrl = null;
+
+function showStatus(msg){
+  const s=document.getElementById('status');
+  s.textContent=msg;
+  s.style.display='block';
+}
+function hideStatus(){
+  document.getElementById('status').style.display='none';
+}
+
+async function load(){
+ try{
+  const {data,error} = await supa.from('videos').select('*').order('created_at',{ascending:false}).limit(20);
+  if(error){
+    document.getElementById('feed').innerHTML='<p style="text-align:center;padding-top:40vh">DB Error: '+error.message+'</p>';
+    return;
+  }
+  if(!data || data.length==0){
+    document.getElementById('feed').innerHTML='<h2 style="text-align:center;padding-top:40vh">No videos yet<br>Be first to upload! 🎥</h2>';
+    return;
+  }
+  const feed=document.getElementById('feed');
+  feed.innerHTML='';
+  data.forEach(v=>{
+   const div=document.createElement('div');
+   div.className='video';
+   div.innerHTML=`<video src="${v.video_url}" controls loop playsinline></video><div class="caption"><b>${v.caption||''}</b></div>`;
+   feed.appendChild(div);
+  });
+ }catch(e){
+  document.getElementById('feed').innerHTML='Error: '+e.message
+ }
+}
+load();
+
+document.getElementById('uploadBtn').onclick=()=>document.getElementById('fileInput').click();
+
+document.getElementById('fileInput').onchange=async (e)=>{
+ const file=e.target.files[0];
+ if(!file) return;
+ showStatus('Uploading... wait 30 sec, no close window');
+ const name=Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9.]/g,'_');
+ try{
+  const {error} = await supa.storage.from('mambilla-videos').upload(name,file);
+  if(error){
+    hideStatus();
+    alert('Storage Error: '+error.message+' | Check bucket name is mambilla-videos');
+    console.error(error);
+    return;
+  }
+  const {data}=supa.storage.from('mambilla-videos').getPublicUrl(name);
+  pendingPublicUrl=data.publicUrl;
+  hideStatus();
+  document.getElementById('captionBox').style.display='block';
+  document.getElementById('captionInput').focus();
+ }catch(err){
+  hideStatus();
+  alert('Upload failed: '+err.message);
+  console.error(err)
+ }
+};
+
+document.getElementById('captionOk').onclick=async ()=>{
+ const caption=document.getElementById('captionInput').value || 'MambillaTok video';
+ document.getElementById('captionBox').style.display='none';
+ showStatus('Saving...');
+ try{
+  const {error:dbErr}=await supa.from('videos').insert({video_url:pendingPublicUrl,caption});
+  if(dbErr){
+    hideStatus();
+    alert('DB Error: '+dbErr.message);
+    return;
+  }
+  document.getElementById('captionInput').value='';
+  hideStatus();
+  showStatus('Uploaded! 🎉');
+  setTimeout(hideStatus,2000);
+  load();
+ }catch(err){
+  hideStatus();
+  alert('DB save failed: '+err.message)
+ }
+};
+
+document.getElementById('captionCancel').onclick=()=>{
+ document.getElementById('captionBox').style.display='none';
+ document.getElementById('captionInput').value='';
+ hideStatus();
+};
+</script>
+</body>
+</html>
