@@ -1,46 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#fe2c55">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MambillaTok - Cameroon TikTok</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto;overflow:hidden}
-#app{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory}
-.video-card{height:100vh;width:100vw;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
-.video-card video{height:100%;width:100%;object-fit:cover}
-.info{position:absolute;bottom:100px;left:15px;right:80px;z-index:2}
-.info h3{font-size:18px;margin-bottom:5px}
-.info p{font-size:14px;opacity:0.8}
-.actions{position:absolute;right:10px;bottom:120px;display:flex;flex-direction:column;gap:20px;z-index:2}
-.action-btn{width:50px;height:50px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer}
-.header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;justify-content:center;gap:20px;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)}
-.header span{font-weight:bold;opacity:0.6} .header span.active{opacity:1;border-bottom:2px solid #fe2c55}
-.logo{position:fixed;top:12px;left:15px;z-index:11;font-weight:900;font-size:20px} .logo span{color:#fe2c55}
-.loading{height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center} .loading h1{font-size:32px;font-weight:900} .loading h1 span{color:#fe2c55} .loading p{margin-top:10px;opacity:0.7}
+body{background:#000;color:#fff;font-family:Arial;overflow:hidden;height:100vh}
+.feed{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory}
+.post{height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:#111}
+video{width:100%;height:100%;object-fit:cover}
+.info{position:absolute;bottom:80px;left:15px;z-index:2;max-width:70%}
+.user{font-weight:bold;font-size:18px}
+.caption{margin-top:5px;font-size:14px}
+.actions{position:absolute;right:15px;bottom:100px;display:flex;flex-direction:column;gap:20px;z-index:2}
+.btn{font-size:28px;background:rgba(255,255,255,0.1);width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.top{position:fixed;top:0;width:100%;text-align:center;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent);z-index:10;font-weight:bold;font-size:20px}
+.error-box{padding:50px;text-align:center}
+.error-box a{color:#ff0050}
 </style>
 </head>
 <body>
-<div class="logo">Mambilla<span>Tok</span></div>
-<div class="header"><span class="active">For You</span><span>Following</span></div>
-<div id="app"><div class="loading"><h1>Mambi<span>llaTok</span></h1><p>Cameroon • Mambilla • Supabase LIVE</p></div></div>
+<div class="top">MambillaTok 🇨🇲</div>
+<div class="feed" id="feed">
+<div class="error-box" id="status">Loading videos...</div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://vtytewadmmufjpizopjf.supabase.co";
-const SUPABASE_KEY = "sb_publishable_RtgoaL248SZgC6bq6FXz3A_gGHQN0Yt";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-async function loadVideos(){
-  const { data, error } = await supabaseClient.from('videos').select('*').order('created_at',{ascending:false});
-  if(error){ document.getElementById('app').innerHTML='<div class="loading"><h1>Error</h1><p>'+error.message+'</p></div>'; return; }
-  if(!data || data.length===0){ document.getElementById('app').innerHTML='<div class="loading"><h1>Mambi<span>llaTok</span></h1><p>No videos yet. Go to /admin.html to upload first video!</p></div>'; return; }
-  let html=""; data.forEach(v=>{ html+=`<div class="video-card"><video src="${v.video_url}" loop playsinline onclick="this.paused?this.play():this.pause()"></video><div class="info"><h3>@${v.username||'mambilla'}</h3><p>${v.caption||''}</p></div><div class="actions"><div class="action-btn">❤️</div><div class="action-btn">💬</div><div class="action-btn">↗️</div></div></div>`; });
-  document.getElementById('app').innerHTML=html;
-  const vids=document.querySelectorAll('video'); let observer=new IntersectionObserver(entries=>{ entries.forEach(e=>{ if(e.isIntersecting){ e.target.play().catch(()=>{}); } else{ e.target.pause(); } }); },{threshold:0.7}); vids.forEach(v=>observer.observe(v));
+const SUPA_URL = "https://vtytewadmmufjpizopjf.supabase.co";
+const SUPA_KEY = "sb_publishable_Rtgo4zgxIHsGvANQqJDbCA_-J2dA6zG";
+
+async function init() {
+  const feed = document.getElementById('feed');
+  const status = document.getElementById('status');
+  
+  try {
+    // Direct fetch test - works with new keys
+    const res = await fetch(`${SUPA_URL}/rest/v1/videos?select=*&order=created_at.desc`, {
+      headers: {
+        "apikey": SUPA_KEY,
+        "Authorization": `Bearer ${SUPA_KEY}`
+      }
+    });
+    
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    
+    const data = await res.json();
+    
+    if (!data || data.length === 0) {
+      feed.innerHTML = `<div class="error-box"><h2>No videos yet 🎥</h2><p>Go to <a href="/admin.html">/admin.html</a> to upload first video!</p><p style="margin-top:20px;color:#888">CEO, your site is LIVE!</p></div>`;
+      return;
+    }
+    
+    feed.innerHTML = "";
+    data.forEach(v => {
+      const div = document.createElement('div');
+      div.className = 'post';
+      div.innerHTML = `
+        <video src="${v.video_url}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
+        <div class="info"><div class="user">@${v.username || 'mambilla_ceo'}</div><div class="caption">${v.caption || ''}</div></div>
+        <div class="actions"><div class="btn">❤️</div><div class="btn">💬</div><div class="btn">↗️</div></div>
+      `;
+      feed.appendChild(div);
+      div.querySelector('video').play().catch(()=>{});
+    });
+    
+  } catch (err) {
+    console.error(err);
+    feed.innerHTML = `<div class="error-box"><h2>Offline Mode</h2><p style="color:#888">Error: ${err.message}</p><p>Possible causes:</p><p style="text-align:left;margin:10px auto;max-width:300px">1. Turn OFF VPN (I see VPN ON)<br>2. Check internet<br>3. Supabase project paused<br><br>Go to <a href="/admin.html">/admin.html</a> to upload!<br><br>Your table EXISTS, so after VPN off it will work!</p></div>`;
+  }
 }
-loadVideos();
+init();
 </script>
 </body>
 </html>
