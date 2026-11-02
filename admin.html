@@ -8,64 +8,44 @@
 body{background:#000;color:#fff;font-family:Arial;padding:20px}
 h1{font-weight:900} h1 span{color:#fe2c55}
 .card{background:#111;padding:20px;border-radius:15px;margin-top:20px}
-input, textarea{width:100%;padding:12px;margin:8px 0;background:#222;border:1px solid #333;color:#fff;border-radius:8px}
+input,textarea{width:100%;padding:12px;margin:8px 0;background:#222;border:1px solid #333;color:#fff;border-radius:8px}
 button{background:#fe2c55;color:#fff;border:none;padding:15px 25px;border-radius:10px;font-weight:bold;width:100%;cursor:pointer;margin-top:10px}
-button:disabled{background:#555}
-#status{margin-top:15px;padding:10px;border-radius:8px;display:none}
-.success{background:#00c853} .error{background:#d50000}
+#status{margin-top:15px;padding:10px;border-radius:8px;display:none} .success{background:#00c853} .error{background:#d50000}
 </style>
 </head>
 <body>
 <h1>Mambilla<span>Tok</span> Admin 🇨🇲</h1>
 <p>Upload video to Supabase LIVE</p>
-
 <div class="card">
-  <input type="file" id="videoFile" accept="video/*">
-  <input type="text" id="username" placeholder="Username e.g. mambilla_ceo">
-  <textarea id="caption" placeholder="Caption e.g. First video from Mambilla!"></textarea>
-  <button id="uploadBtn" onclick="upload()">🚀 Upload to TikTok</button>
-  <div id="status"></div>
+<input type="file" id="videoFile" accept="video/*">
+<input type="text" id="username" placeholder="Username e.g. mambilla_ceo">
+<textarea id="caption" placeholder="Caption e.g. First video from Mambilla!"></textarea>
+<button id="uploadBtn" onclick="upload()">🚀 Upload to TikTok</button>
+<div id="status"></div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://fbtqzprptmnuyfyrhprj.supabase.co";
-const SUPABASE_KEY = "sb_publishable_hB3Ppo5u4eKCb3t9aH_3Yw_HRz8Yj3R";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+const SUPABASE_URL = "https://vtytewadmmufjpizopjf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_RtgoaL248SZgC6bq6FXz3A_gGHQN0Yt";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 async function upload(){
-  const file = document.getElementById('videoFile').files[0];
-  const username = document.getElementById('username').value || 'mambilla';
-  const caption = document.getElementById('caption').value || '';
-  const btn = document.getElementById('uploadBtn');
-  const status = document.getElementById('status');
-  
+  const file=document.getElementById('videoFile').files[0];
+  const username=document.getElementById('username').value||'mambilla';
+  const caption=document.getElementById('caption').value||'';
+  const btn=document.getElementById('uploadBtn'); const status=document.getElementById('status');
   if(!file){ alert('Choose video first!'); return; }
-  
-  btn.disabled = true; btn.textContent = 'Uploading...';
-  status.style.display='block'; status.className=''; status.textContent='Uploading video...';
-
+  btn.disabled=true; btn.textContent='Uploading...'; status.style.display='block'; status.className=''; status.textContent='Uploading video...';
   try{
-    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9.]/g,'');
-    const { error: upError } = await supabase.storage.from('videos').upload(fileName, file);
+    const fileName=Date.now()+'_'+file.name.replace(/[^a-zA-Z0-9.]/g,'');
+    const { error: upError } = await supabaseClient.storage.from('videos').upload(fileName,file);
     if(upError) throw upError;
-    
-    const { data: urlData } = supabase.storage.from('videos').getPublicUrl(fileName);
-    
-    const { error: dbError } = await supabase.from('videos').insert([{ 
-      video_url: urlData.publicUrl, 
-      username: username, 
-      caption: caption 
-    }]);
+    const { data: urlData } = supabaseClient.storage.from('videos').getPublicUrl(fileName);
+    const { error: dbError } = await supabaseClient.from('videos').insert([{ video_url: urlData.publicUrl, username: username, caption: caption }]);
     if(dbError) throw dbError;
-    
-    status.className='success'; status.textContent='✅ SUCCESS! Video LIVE! Go to homepage to see it.';
+    status.className='success'; status.textContent='✅ SUCCESS! Video LIVE! Go to homepage now!';
     btn.textContent='✅ Uploaded!';
-    setTimeout(()=>{ btn.disabled=false; btn.textContent='🚀 Upload to TikTok'; }, 2000);
-  }catch(e){
-    status.className='error'; status.textContent='❌ Error: ' + e.message;
-    btn.disabled=false; btn.textContent='🚀 Upload to TikTok';
-  }
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='🚀 Upload to TikTok'; },2000);
+  }catch(e){ status.className='error'; status.textContent='❌ Error: '+e.message; btn.disabled=false; btn.textContent='🚀 Upload to TikTok'; }
 }
 </script>
 </body>
