@@ -20,79 +20,38 @@ a{color:#ff0050}
 <div class="box">
 <input type="file" id="videoFile" accept="video/*">
 <input type="text" id="username" placeholder="Username" value="mambilla_ceo">
-<textarea id="caption" placeholder="Caption..." rows="3">Welcome to MambillaTok! First video! 🔥</textarea>
+<textarea id="caption" placeholder="Caption..." rows="3">Welcome to MambillaTok! 🔥</textarea>
 <button id="btn" onclick="upload()">🚀 Upload to TikTok</button>
-<div id="log">Ready to upload. Turn OFF VPN first!</div>
+<div id="log">Ready. TURN OFF VPN first!</div>
 <p style="text-align:center;margin-top:15px"><a href="/">Go to Homepage</a></p>
 </div>
-
 <script>
 const SUPA_URL = "https://vtytewadmmufjpizopjf.supabase.co";
 const SUPA_KEY = "sb_publishable_Rtgo4zgxIHsGvANQqJDbCA_-J2dA6zG";
-
 async function upload(){
-  const fileInput = document.getElementById('videoFile');
-  const user = document.getElementById('username').value || 'mambilla_ceo';
-  const caption = document.getElementById('caption').value;
-  const log = document.getElementById('log');
-  const btn = document.getElementById('btn');
-  
-  if(!fileInput.files[0]){ log.textContent="Please choose video!"; return; }
-  
-  btn.disabled=true;
-  btn.textContent="Uploading...";
-  log.textContent="Step 1: Uploading video to storage...";
-  
+  const fileInput=document.getElementById('videoFile');
+  const user=document.getElementById('username').value||'mambilla_ceo';
+  const caption=document.getElementById('caption').value;
+  const log=document.getElementById('log');
+  const btn=document.getElementById('btn');
+  if(!fileInput.files[0]){log.textContent="Choose video!";return;}
+  btn.disabled=true;btn.textContent="Uploading...";log.textContent="Step 1: Uploading...";
   try{
-    const file = fileInput.files[0];
-    const fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.]/g,"_");
-    
-    // Upload to storage via direct fetch
-    const uploadRes = await fetch(`${SUPA_URL}/storage/v1/object/videos/${fileName}`, {
-      method: 'POST',
-      headers: {
-        "apikey": SUPA_KEY,
-        "Authorization": `Bearer ${SUPA_KEY}`,
-        "Content-Type": file.type
-      },
-      body: file
+    const file=fileInput.files[0];
+    const fileName=Date.now()+"_"+file.name.replace(/[^a-zA-Z0-9.]/g,"_");
+    const uploadRes=await fetch(`${SUPA_URL}/storage/v1/object/videos/${fileName}`,{
+      method:'POST',headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":file.type},body:file
     });
-    
-    if(!uploadRes.ok){
-      const err = await uploadRes.text();
-      throw new Error("Storage upload failed: " + err);
-    }
-    
-    const videoUrl = `${SUPA_URL}/storage/v1/object/public/videos/${fileName}`;
-    log.textContent=`Step 1 DONE! URL: ${videoUrl}\nStep 2: Saving to database...`;
-    
-    // Insert into videos table
-    const insertRes = await fetch(`${SUPA_URL}/rest/v1/videos`, {
-      method: 'POST',
-      headers: {
-        "apikey": SUPA_KEY,
-        "Authorization": `Bearer ${SUPA_KEY}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal"
-      },
-      body: JSON.stringify({ video_url: videoUrl, username: user, caption: caption })
+    if(!uploadRes.ok){const err=await uploadRes.text();throw new Error("Storage: "+err);}
+    const videoUrl=`${SUPA_URL}/storage/v1/object/public/videos/${fileName}`;
+    log.textContent=`Upload OK!\nSaving to DB...`;
+    const insertRes=await fetch(`${SUPA_URL}/rest/v1/videos`,{
+      method:'POST',headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":"application/json","Prefer":"return=minimal"},
+      body:JSON.stringify({video_url:videoUrl,username:user,caption:caption})
     });
-    
-    if(!insertRes.ok){
-      const err = await insertRes.text();
-      throw new Error("Database insert failed: " + err);
-    }
-    
-    log.textContent=`✅ SUCCESS! Video uploaded!\n\nURL: ${videoUrl}\n\nGo to homepage to see it!`;
-    btn.textContent="✅ Uploaded! Upload another?";
-    btn.disabled=false;
-    
-  }catch(err){
-    console.error(err);
-    log.textContent=`❌ FAILED: ${err.message}\n\nFix: 1. Turn OFF VPN\n2. Check Storage bucket 'videos' is Public\n3. Check RLS Success done`;
-    btn.disabled=false;
-    btn.textContent="🚀 Try Again";
-  }
+    if(!insertRes.ok){const err=await insertRes.text();throw new Error("DB: "+err);}
+    log.textContent=`✅ SUCCESS!\nGo to homepage!`;btn.textContent="✅ Uploaded!";btn.disabled=false;
+  }catch(err){log.textContent=`❌ FAILED: ${err.message}\nTURN OFF VPN!`;btn.disabled=false;btn.textContent="🚀 Try Again";}
 }
 </script>
 </body>
