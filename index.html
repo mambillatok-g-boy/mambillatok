@@ -6,51 +6,44 @@
 <title>MambillaTok - Cameroon TikTok</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:Arial;overflow:hidden;height:100vh}
+body{background:#000;color:#fff;font-family:Arial;height:100vh;overflow:hidden}
+.top{position:fixed;top:0;width:100%;text-align:center;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,0.9),transparent);z-index:10;font-weight:bold;font-size:20px}
 .feed{height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory}
-.post{height:100vh;scroll-snap-align:start;position:relative;display:flex;align-items:center;justify-content:center;background:#111}
+.post{height:100vh;scroll-snap-align:start;position:relative;background:#000;display:flex;align-items:center;justify-content:center}
 video{width:100%;height:100%;object-fit:cover}
-.info{position:absolute;bottom:80px;left:15px;z-index:2;max-width:70%}
-.user{font-weight:bold;font-size:18px}
-.caption{margin-top:5px;font-size:14px}
-.actions{position:absolute;right:15px;bottom:100px;display:flex;flex-direction:column;gap:20px;z-index:2}
-.btn{font-size:28px;background:rgba(255,255,255,0.1);width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.top{position:fixed;top:0;width:100%;text-align:center;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent);z-index:10;font-weight:bold;font-size:20px}
-.error-box{padding:80px 20px;text-align:center}
-.error-box a{color:#ff0050}
+.info{position:absolute;bottom:90px;left:15px;z-index:2}
+.user{font-weight:bold;font-size:18px;text-shadow:1px 1px 3px #000}
+.caption{margin-top:5px;font-size:15px;text-shadow:1px 1px 3px #000;max-width:75vw}
+.actions{position:absolute;right:15px;bottom:120px;display:flex;flex-direction:column;gap:20px;z-index:2}
+.btn{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer}
+.goAdmin{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#ff0050;padding:10px 20px;border-radius:20px;z-index:20;text-decoration:none;color:#fff;font-weight:bold}
+.error-box{padding:100px 20px;text-align:center}
 </style>
 </head>
 <body>
 <div class="top">MambillaTok 🇨🇲</div>
-<div class="feed" id="feed"><div class="error-box" id="status">Loading...</div></div>
+<div class="feed" id="feed"><div class="error-box">Loading...</div></div>
+<a class="goAdmin" href="/admin.html">+ Upload</a>
 <script>
-const SUPA_URL = "https://vtytewadmmufjpizopjf.supabase.co";
-const SUPA_KEY = "sb_publishable_Rtgo4zgxIHsGvANQqJDbCA_-J2dA6zG";
-async function init(){
-  const feed=document.getElementById('feed');
-  try{
-    const res=await fetch(`${SUPA_URL}/rest/v1/videos?select=*&order=created_at.desc`,{
-      headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`}
-    });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data=await res.json();
-    if(!data||data.length===0){
-      feed.innerHTML=`<div class="error-box"><h2>No videos yet 🎥</h2><p>Go to <a href="/admin.html">/admin.html</a> to upload!</p><p style="margin-top:20px">Site LIVE! VPN must be OFF!</p></div>`;
-      return;
-    }
-    feed.innerHTML="";
-    data.forEach(v=>{
-      const div=document.createElement('div');
-      div.className='post';
-      div.innerHTML=`<video src="${v.video_url}" loop playsinline onclick="this.paused?this.play():this.pause()"></video><div class="info"><div class="user">@${v.username||'mambilla_ceo'}</div><div class="caption">${v.caption||''}</div></div><div class="actions"><div class="btn">❤️</div><div class="btn">💬</div><div class="btn">↗️</div></div>`;
-      feed.appendChild(div);
-      div.querySelector('video').play().catch(()=>{});
-    });
-  }catch(err){
-    feed.innerHTML=`<div class="error-box"><h2>Error: ${err.message}</h2><p>TURN OFF VPN!</p><p><a href="/admin.html">Go to Admin</a></p></div>`;
-  }
+const SUPA_URL="https://vtytewadmmufjpizopjf.supabase.co";
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0eXRld2FkbW11ZmpwbHpvcGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMDg4NTMsImV4cCI6MjEwODg4NDg1M30.teqlRKU9Gh3nTK9lzxVb-kBPDAMc8nPDO-FHF7MR2Ok";
+async function load(){
+ const feed=document.getElementById('feed');
+ try{
+  const res=await fetch(`${SUPA_URL}/rest/v1/videos?select=*&order=created_at.desc`,{headers:{"apikey":SUPA_ANON,"Authorization":`Bearer ${SUPA_ANON}`}});
+  if(!res.ok) throw new Error(`DB Error ${res.status} - Check table videos exists!`);
+  const data=await res.json();
+  if(!data||data.length===0){feed.innerHTML=`<div class="error-box"><h2>No videos yet 🎥</h2><p>Go to <a href="/admin.html" style="color:#ff0050">/admin.html</a> to upload!</p></div>`;return;}
+  feed.innerHTML='';data.forEach(v=>{
+   const div=document.createElement('div');div.className='post';
+   div.innerHTML=`<video src="${v.video_url}" loop playsinline onclick="this.paused?this.play():this.pause()"></video><div class="info"><div class="user">@${v.username||'mambilla'}</div><div class="caption">${v.caption||''}</div></div><div class="actions"><div class="btn">❤️</div><div class="btn">💬</div><div class="btn">↗️</div></div>`;
+   feed.appendChild(div);
+  });
+  feed.querySelector('video')?.play().catch(()=>{});
+  feed.addEventListener('scroll',()=>{document.querySelectorAll('video').forEach(v=>{const r=v.getBoundingClientRect();if(r.top>=0&&r.top<400)v.play().catch(()=>{});else v.pause();});});
+ }catch(e){feed.innerHTML=`<div class="error-box"><h2>❌ ${e.message}</h2><p><a href="/admin.html" style="color:#ff0050">Go to Admin</a></p></div>`;}
 }
-init();
+load();
 </script>
 </body>
 </html>
