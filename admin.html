@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MambillaTok Admin</title>
+<style>
+body{background:black;color:white;font-family:sans-serif;margin:0;padding:20px}
+.card{background:#18181b;padding:20px;border-radius:16px;border:1px solid #27272a;margin-bottom:20px}
+input{width:100%;padding:12px;border-radius:10px;background:black;color:white;border:1px solid #333;box-sizing:border-box}
+button{padding:12px 20px;border-radius:20px;border:none;font-weight:bold;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(min-width:600px){.grid{grid-template-columns:1fr 1fr 1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="card" style="max-width:380px;margin:60px auto">
+    <h2>MambillaTok Admin</h2>
+    <p style="color:#999">CEO only: mambillatok@gmail.com</p>
+    <input id="email" type="email" placeholder="mambillatok@gmail.com" style="margin:16px 0">
+    <button onclick="login()" style="width:100%;background:white;color:black">Enter Dashboard</button>
+  </div>
+</div>
+
+<div id="dash" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <h1>MambillaTok CEO Dashboard</h1>
+    <button onclick="logout()" style="background:#18181b;color:white">Logout</button>
+  </div>
+
+  <div class="grid" style="margin:20px 0">
+    <div class="card"><small style="color:#999">Total Videos</small><h2 id="vCount">0</h2></div>
+    <div class="card"><small style="color:#999">Total Views</small><h2>11</h2></div>
+    <div class="card"><small style="color:#999">Users</small><h2>1</h2></div>
+    <div class="card"><small style="color:#999">Likes</small><h2>5</h2></div>
+  </div>
+
+  <div class="card">
+    <h3>Manage Videos</h3>
+    <div id="videoList" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<script>
+const ADMIN = "mambillatok@gmail.com";
+if(localStorage.getItem("mambilla_admin")===ADMIN){
+  showDash();
+}
+function login(){
+  const e=document.getElementById("email").value.toLowerCase().trim();
+  if(e===ADMIN){localStorage.setItem("mambilla_admin",ADMIN);showDash();}
+  else{alert("Only mambillatok@gmail.com can enter!");}
+}
+function showDash(){
+  document.getElementById("login").style.display="none";
+  document.getElementById("dash").style.display="block";
+  loadVideos();
+}
+function logout(){localStorage.removeItem("mambilla_admin");location.reload();}
+function loadVideos(){
+  const list=document.getElementById("videoList");
+  const videos=JSON.parse(localStorage.getItem("mambilla_videos")||"[]");
+  document.getElementById("vCount").innerText=videos.length||1;
+  if(videos.length===0){
+    list.innerHTML="<p style='color:#999'>Your Mambilla girls video is live! (From index.html feed)</p>";
+  } else {
+    list.innerHTML=videos.map((v,i)=>`<div style='display:flex;justify-content:space-between;padding:10px;background:black;border-radius:10px;margin-bottom:8px'><span>${v.title||"Video "+i}</span><button onclick="del(${i})" style='background:#7f1d1d;color:#fca5a5'>Delete</button></div>`).join("");
+  }
+}
+function del(i){
+  if(!confirm("Delete this video?")) return;
+  let videos=JSON.parse(localStorage.getItem("mambilla_videos")||"[]");
+  videos.splice(i,1);
+  localStorage.setItem("mambilla_videos",JSON.stringify(videos));
+  loadVideos();
+}
+</script>
+</body>
+</html>
