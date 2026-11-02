@@ -10,48 +10,42 @@ h1{text-align:center;color:#ff0050}
 .box{background:#111;padding:20px;border-radius:15px;margin-top:20px}
 input,textarea{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none;background:#222;color:#fff}
 button{width:100%;padding:15px;background:#ff0050;color:#fff;border:none;border-radius:8px;font-size:18px;font-weight:bold;cursor:pointer;margin-top:10px}
-button:disabled{background:#555}
-#log{margin-top:15px;padding:10px;background:#222;border-radius:8px;font-size:13px;white-space:pre-wrap;min-height:40px}
+#log{margin-top:15px;padding:10px;background:#222;border-radius:8px;font-size:13px;white-space:pre-wrap;min-height:40px;word-break:break-all}
 a{color:#ff0050}
 </style>
 </head>
 <body>
-<h1>MambillaTok Admin 🇨🇲</h1>
+<h1>Admin 🇨🇲</h1>
 <div class="box">
-<input type="file" id="videoFile" accept="video/*">
-<input type="text" id="username" placeholder="Username" value="mambilla_ceo">
-<textarea id="caption" placeholder="Caption..." rows="3">Welcome to MambillaTok! 🔥</textarea>
-<button id="btn" onclick="upload()">🚀 Upload to TikTok</button>
-<div id="log">Ready. TURN OFF VPN first!</div>
-<p style="text-align:center;margin-top:15px"><a href="/">Go to Homepage</a></p>
+<input type="file" id="file" accept="video/*">
+<input type="text" id="user" value="mambilla_ceo">
+<textarea id="caption" rows="3">Welcome to MambillaTok! 🔥🇨🇲</textarea>
+<button id="btn" onclick="upload()">🚀 Upload to Cloud</button>
+<div id="log">Ready! Select video (max 50MB)</div>
+<p style="text-align:center;margin-top:15px"><a href="/">Go Home</a></p>
 </div>
 <script>
-const SUPA_URL = "https://vtytewadmmufjpizopjf.supabase.co";
-const SUPA_KEY = "sb_publishable_Rtgo4zgxIHsGvANQqJDbCA_-J2dA6zG";
+const SUPA_URL="https://vtytewadmmufjpizopjf.supabase.co";
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0eXRld2FkbW11ZmpwbHpvcGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzMDg4NTMsImV4cCI6MjEwODg4NDg1M30.teqlRKU9Gh3nTK9lzxVb-kBPDAMc8nPDO-FHF7MR2Ok";
 async function upload(){
-  const fileInput=document.getElementById('videoFile');
-  const user=document.getElementById('username').value||'mambilla_ceo';
-  const caption=document.getElementById('caption').value;
-  const log=document.getElementById('log');
-  const btn=document.getElementById('btn');
-  if(!fileInput.files[0]){log.textContent="Choose video!";return;}
-  btn.disabled=true;btn.textContent="Uploading...";log.textContent="Step 1: Uploading...";
-  try{
-    const file=fileInput.files[0];
-    const fileName=Date.now()+"_"+file.name.replace(/[^a-zA-Z0-9.]/g,"_");
-    const uploadRes=await fetch(`${SUPA_URL}/storage/v1/object/videos/${fileName}`,{
-      method:'POST',headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":file.type},body:file
-    });
-    if(!uploadRes.ok){const err=await uploadRes.text();throw new Error("Storage: "+err);}
-    const videoUrl=`${SUPA_URL}/storage/v1/object/public/videos/${fileName}`;
-    log.textContent=`Upload OK!\nSaving to DB...`;
-    const insertRes=await fetch(`${SUPA_URL}/rest/v1/videos`,{
-      method:'POST',headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":"application/json","Prefer":"return=minimal"},
-      body:JSON.stringify({video_url:videoUrl,username:user,caption:caption})
-    });
-    if(!insertRes.ok){const err=await insertRes.text();throw new Error("DB: "+err);}
-    log.textContent=`✅ SUCCESS!\nGo to homepage!`;btn.textContent="✅ Uploaded!";btn.disabled=false;
-  }catch(err){log.textContent=`❌ FAILED: ${err.message}\nTURN OFF VPN!`;btn.disabled=false;btn.textContent="🚀 Try Again";}
+ const f=document.getElementById('file').files[0];
+ const u=document.getElementById('user').value||'mambilla_ceo';
+ const c=document.getElementById('caption').value;
+ const log=document.getElementById('log');
+ const btn=document.getElementById('btn');
+ if(!f){log.textContent='Choose video!';return;}
+ if(f.size>52428800){log.textContent='Too big! Max 50MB';return;}
+ btn.disabled=true;btn.textContent='Uploading...';log.textContent=`Uploading ${f.name}...`;
+ try{
+  const name=Date.now()+'_'+f.name.replace(/[^a-z0-9.]/gi,'_');
+  const up=await fetch(`${SUPA_URL}/storage/v1/object/videos/${name}`,{method:'POST',headers:{"apikey":SUPA_ANON,"Authorization":`Bearer ${SUPA_ANON}`,"Content-Type":f.type},body:f});
+  if(!up.ok){const t=await up.text();throw new Error('STORAGE ERROR: '+t+'\n\nFIX: Go to Supabase -> Storage -> New Bucket -> Name: videos -> PUBLIC=ON');}
+  const url=`${SUPA_URL}/storage/v1/object/public/videos/${name}`;
+  log.textContent=`Storage OK! Saving to DB...\n${url}`;
+  const ins=await fetch(`${SUPA_URL}/rest/v1/videos`,{method:'POST',headers:{"apikey":SUPA_ANON,"Authorization":`Bearer ${SUPA_ANON}`,"Content-Type":"application/json","Prefer":"return=minimal"},body:JSON.stringify({video_url:url,username:u,caption:c})});
+  if(!ins.ok){const t=await ins.text();throw new Error('DB ERROR: '+t+'\n\nFIX: Table videos missing! Go to SQL Editor and run SQL I will give you');}
+  log.textContent=`✅ SUCCESS! LIVE!\n${url}\n\nGo to homepage NOW!`;btn.textContent='✅ Done!';btn.disabled=false;
+ }catch(err){log.textContent=`❌ ${err.message}`;btn.disabled=false;btn.textContent='🚀 Retry';}
 }
 </script>
 </body>
