@@ -16,59 +16,38 @@ video{width:100%;height:100%;object-fit:cover}
 .actions{position:absolute;right:15px;bottom:100px;display:flex;flex-direction:column;gap:20px;z-index:2}
 .btn{font-size:28px;background:rgba(255,255,255,0.1);width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .top{position:fixed;top:0;width:100%;text-align:center;padding:15px;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent);z-index:10;font-weight:bold;font-size:20px}
-.error-box{padding:50px;text-align:center}
+.error-box{padding:80px 20px;text-align:center}
 .error-box a{color:#ff0050}
 </style>
 </head>
 <body>
 <div class="top">MambillaTok 🇨🇲</div>
-<div class="feed" id="feed">
-<div class="error-box" id="status">Loading videos...</div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div class="feed" id="feed"><div class="error-box" id="status">Loading...</div></div>
 <script>
 const SUPA_URL = "https://vtytewadmmufjpizopjf.supabase.co";
 const SUPA_KEY = "sb_publishable_Rtgo4zgxIHsGvANQqJDbCA_-J2dA6zG";
-
-async function init() {
-  const feed = document.getElementById('feed');
-  const status = document.getElementById('status');
-  
-  try {
-    // Direct fetch test - works with new keys
-    const res = await fetch(`${SUPA_URL}/rest/v1/videos?select=*&order=created_at.desc`, {
-      headers: {
-        "apikey": SUPA_KEY,
-        "Authorization": `Bearer ${SUPA_KEY}`
-      }
+async function init(){
+  const feed=document.getElementById('feed');
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/videos?select=*&order=created_at.desc`,{
+      headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`}
     });
-    
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
-    const data = await res.json();
-    
-    if (!data || data.length === 0) {
-      feed.innerHTML = `<div class="error-box"><h2>No videos yet 🎥</h2><p>Go to <a href="/admin.html">/admin.html</a> to upload first video!</p><p style="margin-top:20px;color:#888">CEO, your site is LIVE!</p></div>`;
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    if(!data||data.length===0){
+      feed.innerHTML=`<div class="error-box"><h2>No videos yet 🎥</h2><p>Go to <a href="/admin.html">/admin.html</a> to upload!</p><p style="margin-top:20px">Site LIVE! VPN must be OFF!</p></div>`;
       return;
     }
-    
-    feed.innerHTML = "";
-    data.forEach(v => {
-      const div = document.createElement('div');
-      div.className = 'post';
-      div.innerHTML = `
-        <video src="${v.video_url}" loop playsinline onclick="this.paused?this.play():this.pause()"></video>
-        <div class="info"><div class="user">@${v.username || 'mambilla_ceo'}</div><div class="caption">${v.caption || ''}</div></div>
-        <div class="actions"><div class="btn">❤️</div><div class="btn">💬</div><div class="btn">↗️</div></div>
-      `;
+    feed.innerHTML="";
+    data.forEach(v=>{
+      const div=document.createElement('div');
+      div.className='post';
+      div.innerHTML=`<video src="${v.video_url}" loop playsinline onclick="this.paused?this.play():this.pause()"></video><div class="info"><div class="user">@${v.username||'mambilla_ceo'}</div><div class="caption">${v.caption||''}</div></div><div class="actions"><div class="btn">❤️</div><div class="btn">💬</div><div class="btn">↗️</div></div>`;
       feed.appendChild(div);
       div.querySelector('video').play().catch(()=>{});
     });
-    
-  } catch (err) {
-    console.error(err);
-    feed.innerHTML = `<div class="error-box"><h2>Offline Mode</h2><p style="color:#888">Error: ${err.message}</p><p>Possible causes:</p><p style="text-align:left;margin:10px auto;max-width:300px">1. Turn OFF VPN (I see VPN ON)<br>2. Check internet<br>3. Supabase project paused<br><br>Go to <a href="/admin.html">/admin.html</a> to upload!<br><br>Your table EXISTS, so after VPN off it will work!</p></div>`;
+  }catch(err){
+    feed.innerHTML=`<div class="error-box"><h2>Error: ${err.message}</h2><p>TURN OFF VPN!</p><p><a href="/admin.html">Go to Admin</a></p></div>`;
   }
 }
 init();
